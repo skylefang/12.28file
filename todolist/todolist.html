@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <script src="vue.js"></script>
+    <title>toDOList</title>
+</head>
+<style>
+    *{
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+    body{
+        margin: 0;
+        padding: 0;
+        font-size: 16px;
+        /*background: #CDCDCD;*/
+    }
+    header{
+        height: 50px;
+        background: rgba(47,47,47,0.98);
+
+    }
+
+    header > section{
+        height: 100%;
+        width: 600px;
+        margin: 0 auto;
+    }
+    header > section > h2{
+        float: left;
+        width: 100px;
+        line-height: 50px;
+        color: #DDD;
+        font-size: 24px;
+        cursor: pointer;
+        font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+    }
+    header > section > input{
+        float: right;
+        width: 60%;
+        height: 24px;
+        margin-top: 12px;
+        text-indent: 10px;
+        border-radius: 5px;
+        box-shadow: 0 1px 0 rgba(255,255,255,0.24), 0 1px 6px rgba(0,0,0,0.45) inset;
+        border: none;
+    }
+    .doing{
+        width: 600px;
+        height: 600px;
+        margin: 0 auto;
+    }
+    .doing > .btns{
+        width: 100%;
+        height: 50px;
+    }
+    input[type=button]{
+        margin-top: 10px;
+        width: 50px;
+        height: 30px;
+        float: right;
+        border: 1px solid #dddddd;
+        border-radius: 10px;
+        font-size: 12px;
+        line-height: 30px;
+        text-align: center;
+        margin-left: 20px;
+        outline: none;
+        background: #ffffff;
+    }
+    .doing > ul{
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+    }
+    .doing > ul > li>div{
+        width: 100%;
+        height: 30px;
+        padding: 5px 15px;
+        border-bottom: 1px solid #eeeeee;
+        line-height: 30px;
+
+    }
+    .doing > ul > li >div> .ept{
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        border: 1px solid #999999;
+        border-radius: 50%;
+        cursor: pointer;
+    }
+    ul > li > div>p{
+        display: inline-block;
+        margin-left: 10px;
+        color: #777777;
+    }
+    ul > li > div>.del{
+        display: inline-block;
+        width: 30px;
+        height: 100%;
+        font-size: 14px;
+        line-height: 30px;
+        float: right;
+        margin-right: 20px;
+        color: #88856a;
+        cursor: pointer;
+    }
+    .red{
+        color: red;
+    }
+    .check{
+        background: red;
+    }
+
+</style>
+<body>
+<div id="root">
+    <header>
+        <section>
+            <h2>ToDoList</h2>
+            <input type="text" placeholder="添加事项" @keyup.13="add" v-model="con" v-focus>
+        </section>
+    </header>
+    <section class="doing">
+        <div class="btns">
+            <input type="button" value="全部" @click="changeStatus('all')" :class="{red:status=='all'}">
+            <input type="button" value="已完成" @click="changeStatus('1')" :class="{red:status=='1'}">
+            <input type="button" value="未完成" @click="changeStatus('0')" :class="{red:status=='0'}">
+        </div>
+        <ul v-if="all.length!=0">
+            <li v-for="item in datas" v-show="all.length>0">
+                <div v-if="item.edit" @dblclick="edit(item)">
+                    <span class="ept" @click="changeState(item)" :class="{check:item.state==1}"></span>
+                    <p>{{item.title}}</p>
+                    <span class="del" @click="del(item.id)">删除</span>
+                </div>
+                <div v-else>
+                    <input type="text" v-model="item.title" @blur="edit(item)">
+                </div>
+            </li>
+
+
+        </ul>
+        <div v-show="all.length==0" style="color: #777777;">没有数据</div>
+    </section>
+
+</div>
+
+</body>
+<script>
+
+    Vue.directive("focus",{
+        inserted:function (val1) {
+            val1.focus();
+        }
+    })
+    let root = new Vue({
+        el:"#root",
+        data:{
+            con:"",
+            all: localStorage.todo?JSON.parse(localStorage.todo):[],
+            status:"all",
+        },
+        methods:{
+            add(){
+                if(!this.con){
+                    alert("请输入信息");
+                    return;
+                }
+                let obj = {};
+                obj.title = this.con;
+                obj.id = Math.random()+new Date().getTime();
+                obj.state=0;
+                obj.edit=true;
+                this.all.push(obj);
+                this.con="";
+                localStorage.todo=JSON.stringify(this.all);
+            },
+            changeStatus(val){
+                this.status = val;
+            },
+            changeState(obj){
+                if(obj.state==0){
+                    obj.state=1
+                }else{
+                    obj.state=0
+                }
+            },
+            del(id){
+                this.all = this.all.filter(function (a) {
+                    if(a.id!=id){
+                        return a;
+                    }
+                })
+                localStorage.todo=JSON.stringify(this.all);
+            },
+            edit(obj){
+                obj.edit=!obj.edit;
+                localStorage.todo=JSON.stringify(this.all);
+            }
+
+        },
+        mounted(){
+            localStorage.todo=JSON.stringify(this.all);
+        },
+        computed:{
+            datas(){
+               return this.all.filter((a)=>{
+                    if(this.status=="all"){
+                        return a;
+                    }else{
+                        if(a.state==this.status){
+                            return a;
+                        }
+                    }
+
+                })
+
+            }
+        },
+
+    })
+</script>
+</html>
